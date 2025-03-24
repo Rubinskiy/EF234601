@@ -4,3 +4,25 @@
   
 <p align="center">Source code to a Flutter App that was created for <a href="#">EF234601</a>.</p>
 <p align="center">All solutions were created by <a href="https://github.com/Rubinskiy">Robin</a></p>
+
+<hr>
+
+<b>Widgets used</b>:
+- Appbar
+- Scaffold
+- ListView.builder
+- FloatingActionButton
+- AlertDialog
+- Card
+- Text
+- TextField
+
+<b>Custom class & Stateless widgets</b>:
+- Created a task model in models/task.dart
+- Created a task card widget in widgets/task_card.dart
+
+<b>CRUD Operations</b>:
+- Create: Add a new task
+- Read: List all tasks
+- Update: Edit a task
+- Delete: Remove a task
