@@ -7,24 +7,66 @@
 
 <hr>
 
-<b>Widgets used</b>:
-- Appbar
-- Scaffold
-- ListView.builder
-- FloatingActionButton
-- AlertDialog
-- Card
-- Text
-- TextField
+UPDATE: This app now uses Hive, a lightweight and fast NoSQL database, for local data storage. Instead of using in-memory lists, all tasks are persisted to the device's storage.
 
-<b>Custom class & Stateless widgets</b>:
-- Created a task model in models/task.dart
-- Created a task card widget in widgets/task_card.dart
+#### Task Model
 
-<b>CRUD Operations</b>:
-- Create: Add a new task
-- Read: List all tasks
-- Update: Edit a task
-- Delete: Remove a task
+A Task model is created to represent a task with properties like `id`, `title`, `description`, and `isCompleted`. The model also includes methods to convert the task to a Map for storage and to create a Task from a Map.
 
-Video demo: <a href="https://drive.google.com/file/d/1YOOIXqPtMjs4Ji4d3OWlwwKH6JLJIzF9/view?usp=drive_link">https://drive.google.com/file/d/1YOOIXqPtMjs4Ji4d3OWlwwKH6JLJIzF9/view?usp=drive_link</a>
+```dart
+class Task {
+  final String id;
+  String title;
+  String description;
+  bool isCompleted;
+
+  Task({
+    required this.id,
+    required this.title,
+    required this.description,
+    this.isCompleted = false,
+  });
+
+  // converrt the task to a map foor storage
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'isCompleted': isCompleted,
+    };
+  }
+
+  // create task from a map
+  factory Task.fromMap(Map<String, dynamic> map) {
+    return Task(
+      id: map['id'],
+      title: map['title'],
+      description: map['description'],
+      isCompleted: map['isCompleted'],
+    );
+  }
+}
+```
+
+#### Hive Implementation
+
+1. **Initialization**: Hive is initialized in the main function:
+```dart
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter(); // <-- initialize Hive
+  await Hive.openBox('tasks'); // <-- open a box named 'tasks'
+  runApp(const MyApp());
+}
+```
+
+2. **Storage Operations**:
+   - **Create**: Tasks are stored as maps using `_taskBox.add(task.toMap())`
+   - **Read**: Tasks are retrieved and converted back to task objects using `Task.fromMap()`
+   - **Update**: Tasks are updated using `_taskBox.putAt(index, updatedTask.toMap())`
+   - **Delete**: Tasks are removed using `_taskBox.deleteAt(index)`
+
+### Dependencies
+
+I'm using Hive 2.2.3 and Hive Flutter 1.1.0.

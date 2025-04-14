@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'models/task.dart';
 import 'widgets/task_card.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
+  await Hive.openBox('tasks');
   runApp(const MyApp());
 }
 
@@ -30,10 +34,19 @@ class TaskListScreen extends StatefulWidget {
 }
 
 class _TaskListScreenState extends State<TaskListScreen> {
-  final List<Task> _tasks = [];
+  late Box _taskBox;
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-  Task? _editingTask;
+
+  @override
+  void initState() {
+    super.initState();
+    _taskBox = Hive.box('tasks');
+  }
+
+  List<Task> get _tasks {
+    return _taskBox.values.map((map) => Task.fromMap(Map<String, dynamic>.from(map))).toList();
+  }
 
   void _addTask() {
     showDialog(
@@ -61,15 +74,15 @@ class _TaskListScreenState extends State<TaskListScreen> {
           TextButton(
             onPressed: () {
               if (_titleController.text.isNotEmpty) {
-                setState(() {
-                  _tasks.add(Task(
-                    id: DateTime.now().toString(),
-                    title: _titleController.text,
-                    description: _descriptionController.text,
-                  ));
-                  _titleController.clear();
-                  _descriptionController.clear();
-                });
+                final task = Task(
+                  id: DateTime.now().toString(),
+                  title: _titleController.text,
+                  description: _descriptionController.text,
+                );
+                _taskBox.add(task.toMap());
+                _titleController.clear();
+                _descriptionController.clear();
+                setState(() {});
                 Navigator.pop(context);
               }
             },
@@ -81,7 +94,6 @@ class _TaskListScreenState extends State<TaskListScreen> {
   }
 
   void _editTask(Task task) {
-    _editingTask = task;
     _titleController.text = task.title;
     _descriptionController.text = task.description;
 
@@ -110,19 +122,19 @@ class _TaskListScreenState extends State<TaskListScreen> {
           TextButton(
             onPressed: () {
               if (_titleController.text.isNotEmpty) {
-                setState(() {
-                  final index = _tasks.indexWhere((t) => t.id == task.id);
-                  if (index != -1) {
-                    _tasks[index] = Task(
-                      id: task.id,
-                      title: _titleController.text,
-                      description: _descriptionController.text,
-                      isCompleted: task.isCompleted,
-                    );
-                  }
-                  _titleController.clear();
-                  _descriptionController.clear();
-                });
+                final updatedTask = Task(
+                  id: task.id,
+                  title: _titleController.text,
+                  description: _descriptionController.text,
+                  isCompleted: task.isCompleted,
+                );
+                final index = _tasks.indexWhere((t) => t.id == task.id);
+                if (index != -1) {
+                  _taskBox.putAt(index, updatedTask.toMap());
+                }
+                _titleController.clear();
+                _descriptionController.clear();
+                setState(() {});
                 Navigator.pop(context);
               }
             },
@@ -134,23 +146,25 @@ class _TaskListScreenState extends State<TaskListScreen> {
   }
 
   void _deleteTask(Task task) {
-    setState(() {
-      _tasks.removeWhere((t) => t.id == task.id);
-    });
+    final index = _tasks.indexWhere((t) => t.id == task.id);
+    if (index != -1) {
+      _taskBox.deleteAt(index);
+      setState(() {});
+    }
   }
 
   void _toggleTask(Task task) {
-    setState(() {
-      final index = _tasks.indexWhere((t) => t.id == task.id);
-      if (index != -1) {
-        _tasks[index] = Task(
-          id: task.id,
-          title: task.title,
-          description: task.description,
-          isCompleted: !task.isCompleted,
-        );
-      }
-    });
+    final index = _tasks.indexWhere((t) => t.id == task.id);
+    if (index != -1) {
+      final updatedTask = Task(
+        id: task.id,
+        title: task.title,
+        description: task.description,
+        isCompleted: !task.isCompleted,
+      );
+      _taskBox.putAt(index, updatedTask.toMap());
+      setState(() {});
+    }
   }
 
   @override
